@@ -78,6 +78,14 @@
       <HintPath>$(GameDir)/BepInEx/interop/UnityEngine.TextCoreTextEngineModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(GameDir)/BepInEx/interop/UnityEngine.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(GameDir)/BepInEx/interop/UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="Unity.TextMeshPro">
       <HintPath>$(GameDir)/BepInEx/interop/Unity.TextMeshPro.dll</HintPath>
       <Private>false</Private>

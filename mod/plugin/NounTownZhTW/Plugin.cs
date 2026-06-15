@@ -87,6 +87,8 @@ internal static class ZhTwFont
         }
     }
 
+    internal static bool SetupDone => _setupDone;
+
     internal static void DumpAndSetup(string context)
     {
         try
@@ -99,48 +101,101 @@ internal static class ZhTwFont
 
                 if (!_setupDone && f.name == TargetFontAssetName && FontPath != null)
                 {
-                    _setupDone = true;
-                    PlaceholderFont ??= new Font(PlaceholderName);
-
-                    // NotoSansCJKsc's baked SDF atlas texture isn't marked
-                    // "Read/Write Enabled", so TMP refuses to add new glyphs
-                    // to it directly (even with isMultiAtlasTexturesEnabled).
-                    // Instead, create a brand new dynamic font asset from our
-                    // CJK TC TTF - CreateFontAsset allocates a fresh, readable
-                    // atlas texture - and register it as a fallback so missing
-                    // Traditional-only glyphs get rasterized there on demand.
-                    var dynamicFont = TMP_FontAsset.CreateFontAsset(PlaceholderFont);
-                    if (dynamicFont == null)
-                    {
-                        Plugin.Logger.LogError($"[FontDiagnostics:{context}] TMP_FontAsset.CreateFontAsset returned null");
-                    }
-                    else
-                    {
-                        dynamicFont.name = "NounTownZhTW_CJK_Dynamic";
-                        Plugin.Logger.LogInfo($"[FontDiagnostics:{context}] Created \"{dynamicFont.name}\": atlasPopulationMode={dynamicFont.atlasPopulationMode} sourceFontFile={(dynamicFont.sourceFontFile == null ? "null" : dynamicFont.sourceFontFile.name)} atlas={dynamicFont.atlasWidth}x{dynamicFont.atlasHeight} glyphCount={dynamicFont.glyphTable.Count} multiAtlas={dynamicFont.isMultiAtlasTexturesEnabled}");
-
-                        var fallbacks = f.fallbackFontAssetTable;
-                        if (fallbacks == null)
-                        {
-                            fallbacks = new Il2CppSystem.Collections.Generic.List<TMP_FontAsset>();
-                            f.fallbackFontAssetTable = fallbacks;
-                        }
-                        fallbacks.Add(dynamicFont);
-                        Plugin.Logger.LogInfo($"[FontDiagnostics:{context}] Added \"{dynamicFont.name}\" as fallback of \"{f.name}\" ({fallbacks.Count} entries)");
-
-                        var globalFallbacks = TMP_Settings.fallbackFontAssets;
-                        if (globalFallbacks != null)
-                        {
-                            globalFallbacks.Add(dynamicFont);
-                            Plugin.Logger.LogInfo($"[FontDiagnostics:{context}] Added \"{dynamicFont.name}\" to TMP_Settings.fallbackFontAssets ({globalFallbacks.Count} entries)");
-                        }
-                    }
+                    SetupDynamicFallback(f, context);
                 }
             }
         }
         catch (Exception ex)
         {
             Plugin.Logger.LogError($"[FontDiagnostics:{context}] error: {ex}");
+        }
+    }
+
+    // Lightweight poll for ZhTwFontSetupWatcher: unlike DumpAndSetup, this
+    // doesn't dump every loaded TMP_FontAsset (which would spam the log once
+    // per poll while waiting for the game's UI font assets to load) - it
+    // just checks whether the target font is loaded yet. Returns true once
+    // setup has completed (now or previously).
+    internal static bool TryFindAndSetup(string context)
+    {
+        if (_setupDone || FontPath == null)
+        {
+            return _setupDone;
+        }
+
+        try
+        {
+            var fonts = Resources.FindObjectsOfTypeAll<TMP_FontAsset>();
+            foreach (var f in fonts)
+            {
+                if (f.name == TargetFontAssetName)
+                {
+                    SetupDynamicFallback(f, context);
+                    break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Plugin.Logger.LogError($"[FontDiagnostics:{context}] error: {ex}");
+        }
+
+        return _setupDone;
+    }
+
+    // NotoSansCJKsc's baked SDF atlas texture isn't marked "Read/Write
+    // Enabled", so TMP refuses to add new glyphs to it directly (even with
+    // isMultiAtlasTexturesEnabled). Instead, create a brand new dynamic font
+    // asset from our CJK TC TTF - CreateFontAsset allocates a fresh, readable
+    // atlas texture - and register it as a fallback so missing
+    // Traditional-only glyphs get rasterized there on demand.
+    private static void SetupDynamicFallback(TMP_FontAsset target, string context)
+    {
+        _setupDone = true;
+        PlaceholderFont ??= new Font(PlaceholderName);
+
+        var dynamicFont = TMP_FontAsset.CreateFontAsset(PlaceholderFont);
+        if (dynamicFont == null)
+        {
+            Plugin.Logger.LogError($"[FontDiagnostics:{context}] TMP_FontAsset.CreateFontAsset returned null");
+            return;
+        }
+
+        dynamicFont.name = "NounTownZhTW_CJK_Dynamic";
+        Plugin.Logger.LogInfo($"[FontDiagnostics:{context}] Created \"{dynamicFont.name}\": atlasPopulationMode={dynamicFont.atlasPopulationMode} sourceFontFile={(dynamicFont.sourceFontFile == null ? "null" : dynamicFont.sourceFontFile.name)} atlas={dynamicFont.atlasWidth}x{dynamicFont.atlasHeight} glyphCount={dynamicFont.glyphTable.Count} multiAtlas={dynamicFont.isMultiAtlasTexturesEnabled}");
+
+        var fallbacks = target.fallbackFontAssetTable;
+        if (fallbacks == null)
+        {
+            fallbacks = new Il2CppSystem.Collections.Generic.List<TMP_FontAsset>();
+            target.fallbackFontAssetTable = fallbacks;
+        }
+        fallbacks.Add(dynamicFont);
+        Plugin.Logger.LogInfo($"[FontDiagnostics:{context}] Added \"{dynamicFont.name}\" as fallback of \"{target.name}\" ({fallbacks.Count} entries)");
+
+        var globalFallbacks = TMP_Settings.fallbackFontAssets;
+        if (globalFallbacks != null)
+        {
+            globalFallbacks.Add(dynamicFont);
+            Plugin.Logger.LogInfo($"[FontDiagnostics:{context}] Added \"{dynamicFont.name}\" to TMP_Settings.fallbackFontAssets ({globalFallbacks.Count} entries)");
+        }
+
+        RefreshAllText(context);
+    }
+
+    // Any TMP_Text that already rendered zh-TW glyphs before the dynamic CJK
+    // fallback above was registered (e.g. text shown before the fallback
+    // font asset finished loading) is stuck showing tofu for
+    // Traditional-only characters: TMP only re-resolves glyphs when a text's
+    // mesh is regenerated. Force that regeneration now so those
+    // already-visible texts pick up the newly available fallback.
+    private static void RefreshAllText(string context)
+    {
+        var texts = Resources.FindObjectsOfTypeAll<TMP_Text>();
+        Plugin.Logger.LogInfo($"[FontDiagnostics:{context}] Forcing mesh update on {texts.Length} TMP_Text objects to pick up new CJK fallback");
+        foreach (var t in texts)
+        {
+            t.ForceMeshUpdate(true, true);
         }
     }
 }
@@ -246,6 +301,14 @@ internal static class Patch_CheckLoadBundle
     {
         Plugin.Logger.LogInfo($"[BundledObjectLoader] CheckLoadBundle(bundleName=\"{bundleName}\")");
 
+        // CheckLoadBundle fires dozens of times per session from the very
+        // start, so it's a reliable place to retry the dynamic CJK fallback
+        // setup until the "NotoSansCJKsc" font asset has loaded (it isn't
+        // available yet when Plugin.Load runs, and LanguageInit /
+        // ChangeLanguageActions - the original setup triggers - don't run on
+        // a normal launch without Settings interaction).
+        ZhTwFont.TryFindAndSetup("CheckLoadBundle");
+
         if (!RedirectedBundles.Contains(bundleName))
         {
             return true;
@@ -314,6 +377,7 @@ internal static class Patch_GetCountryCode
     static void Postfix(string countryName, bool useDefault, string __result)
     {
         Plugin.Logger.LogInfo($"[DataHandler] GetCountryCode(\"{countryName}\", {useDefault}) -> \"{__result}\"");
+        ZhTwFont.TryFindAndSetup("GetCountryCode");
     }
 }
 
