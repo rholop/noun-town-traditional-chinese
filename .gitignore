@@ -6,6 +6,8 @@
 !/.gitignore
 !/README.md
 !/install.sh
+!/install.ps1
+!/install.bat
 !/mod/
 
 /mod/plugin/NounTownZhTW/bin/
@@ -14,3 +16,4 @@
 /mod/extracted/
 /mod/zh-TW/
 /mod/shadow/
+/mod/package/dist/

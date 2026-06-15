@@ -12,11 +12,45 @@ IL2CPP + Harmony mod:
 
 ## Installing
 
+Download the latest release for your OS from the
+[Releases page](https://github.com/rholop/noun-town-traditional-chinese/releases)
+and extract it anywhere (not into the game folder itself).
+
+The release zips bundle the BepInEx mod loader, the plugin, and the zh-TW
+build scripts, but - to avoid redistributing any of the game's own data -
+**not** the Traditional-Chinese text itself. The installer builds that
+locally, from your own copy of the game, the first time it runs.
+
+### Windows
+
+1. Find your game's install folder (in Steam: right-click *Noun Town
+   Language Learning* → Manage → Browse local files).
+2. Make sure [Python 3](https://www.python.org/downloads/) is installed,
+   with "Add python.exe to PATH" checked during setup.
+3. Drag the game folder onto `install.bat` (or run
+   `powershell -ExecutionPolicy Bypass -File install.ps1 "C:\path\to\game"`).
+4. Launch the game normally - no extra launch options are needed.
+
+See `INSTALL.md` inside the zip for details and troubleshooting.
+
+### Linux (Steam / Proton)
+
 ```sh
 ./install.sh "/path/to/Noun Town Language Learning"
 ```
 
-This:
+Requires `python3`, `pip`, and `bash` (already present on most distros).
+
+Doorstop hooks the game via `winhttp.dll`. Under Proton this DLL override
+must be enabled - set this game's Steam launch options to:
+
+```
+WINEDLLOVERRIDES="winhttp=n,b" %command%
+```
+
+See `INSTALL.md` inside the zip for details.
+
+### What the installer does
 
 1. Copies the bundled BepInEx 6 IL2CPP + Doorstop runtime
    (`mod/bepinex/`) into the game directory (`BepInEx/core`,
@@ -31,28 +65,18 @@ This:
 4. Copies the plugin DLL, fonts, and generated shadow bundles into
    `BepInEx/plugins/NounTownZhTW/`.
 
-Requires `python3`, `pip`, and `bash`.
-
-### Steam / Proton launch option (for Linux)
-
-Doorstop hooks the game via `winhttp.dll`. Under Proton this DLL override
-must be enabled. In Steam, set this game's launch options to:
-
-```
-WINEDLLOVERRIDES="winhttp=n,b" %command%
-```
-
 ### After a game update
 
-Re-run `install.sh` against the updated install. Step 3 rebuilds the zh-TW
-shadow bundles from the (possibly changed) game data, and step 4 redeploys
-the plugin.
+Re-run the installer (`install.sh` on Linux, `install.bat`/`install.ps1` on
+Windows) against the updated install. Step 3 rebuilds the zh-TW shadow
+bundles from the (possibly changed) game data, and step 4 redeploys the
+plugin.
 
 ## Uninstalling
 
 Delete `BepInEx/`, `dotnet/`, `doorstop_config.ini`, `.doorstop_version`,
-`winhttp.dll`, and `mod/` from the game directory, and remove the
-`WINEDLLOVERRIDES` launch option.
+`winhttp.dll`, and `mod/` from the game directory, and (Linux/Proton only)
+remove the `WINEDLLOVERRIDES` launch option.
 
 ## Troubleshooting
 
@@ -62,7 +86,7 @@ Logs are written to `BepInEx/LogOutput.log` in the game directory.
 
 `mod/plugin/NounTownZhTW/` is the plugin's C# source
 (`Plugin.cs` + `NounTownZhTW.csproj`); a prebuilt `NounTownZhTW.dll` is
-committed alongside it so `install.sh` works from a fresh clone with no
+committed alongside it so the installer works from a fresh clone with no
 build step.
 
 To rebuild the plugin and refresh the bundled BepInEx framework
@@ -70,6 +94,14 @@ To rebuild the plugin and refresh the bundled BepInEx framework
 BepInEx - run `mod/package/build_package.sh` from a game install that
 already has BepInEx 6 IL2CPP set up (so the project can reference its
 `BepInEx/core` and `BepInEx/interop` assemblies), then commit the results.
+
+### Releasing
+
+`mod/package/build_release.sh vX.Y.Z` assembles
+`NounTownZhTW-vX.Y.Z-windows.zip` and `-linux.zip` under `mod/package/dist/`
+from the committed `mod/bepinex/`, plugin DLL, fonts, and scripts - run it
+after `build_package.sh`, then publish the zips with
+`gh release create vX.Y.Z mod/package/dist/*.zip`.
 
 ## License
 

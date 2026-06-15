@@ -111,11 +111,12 @@ internal static class ZhTwFont
         }
     }
 
-    // Lightweight poll for ZhTwFontSetupWatcher: unlike DumpAndSetup, this
-    // doesn't dump every loaded TMP_FontAsset (which would spam the log once
-    // per poll while waiting for the game's UI font assets to load) - it
-    // just checks whether the target font is loaded yet. Returns true once
-    // setup has completed (now or previously).
+    // Lightweight retry called from frequently-firing Harmony patches
+    // (GetCountryCode, CheckLoadBundle): unlike DumpAndSetup, this doesn't
+    // dump every loaded TMP_FontAsset (which would spam the log on every
+    // call while waiting for the game's UI font assets to load) - it just
+    // checks whether the target font is loaded yet. Returns true once setup
+    // has completed (now or previously).
     internal static bool TryFindAndSetup(string context)
     {
         if (_setupDone || FontPath == null)
