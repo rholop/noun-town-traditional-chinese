@@ -4,7 +4,7 @@ Adds Traditional Chinese (Taiwan, zh-TW) as a UI/learning language to
 *Noun Town Language Learning*, via a [BepInEx](https://github.com/BepInEx/BepInEx)
 IL2CPP + Harmony mod:
 
-- A new "Chinese (Traditional)" entry in the language picker
+- A new "Chinese (TW)" entry in the language picker
 - Traditional-Chinese item names, localisation strings, and dialogue
   (converted from the game's zh-CN data via OpenCC `s2twp`)
 - A fallback CJK font (Noto Sans CJK TC) so Traditional-only glyphs render
@@ -33,7 +33,7 @@ This:
 
 Requires `python3`, `pip`, and `bash`.
 
-### Steam / Proton launch option
+### Steam / Proton launch option (for Linux)
 
 Doorstop hooks the game via `winhttp.dll`. Under Proton this DLL override
 must be enabled. In Steam, set this game's launch options to:
