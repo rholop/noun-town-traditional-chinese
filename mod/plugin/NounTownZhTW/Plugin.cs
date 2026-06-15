@@ -17,7 +17,7 @@ public class Plugin : BasePlugin
 {
     public const string PluginGuid = "ftml.nountown.zhtw";
     public const string PluginName = "NounTown Traditional Chinese (zh-TW)";
-    public const string PluginVersion = "0.1.0";
+    public const string PluginVersion = "0.2.0";
 
     internal static ManualLogSource Logger = null!;
     internal static string ShadowDir = null!;
