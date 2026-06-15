@@ -5,12 +5,12 @@
 /*
 !/.gitignore
 !/README.md
+!/install.sh
 !/mod/
 
 /mod/plugin/NounTownZhTW/bin/
 /mod/plugin/NounTownZhTW/obj/
 /mod/scripts/__pycache__/
-/mod/package/dist/
 /mod/extracted/
 /mod/zh-TW/
 /mod/shadow/

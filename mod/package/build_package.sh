@@ -1,45 +1,36 @@
 #!/usr/bin/env bash
-# Stage a self-contained, installable copy of the NounTownZhTW mod under
-# mod/package/dist/NounTownZhTW/. Run install.sh from inside that directory
-# against a Noun Town Language Learning install to set it up.
+# Maintainer tool: refresh the committed, bundled BepInEx framework
+# (mod/bepinex/) and the prebuilt plugin DLL
+# (mod/plugin/NounTownZhTW/NounTownZhTW.dll) from this game install's BepInEx
+# setup, so that ./install.sh works from a fresh clone with no build step.
+#
+# Run this after updating the bundled BepInEx version or the plugin source,
+# then commit the results.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GAME_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-DIST="$SCRIPT_DIR/dist/NounTownZhTW"
+BEPINEX_OUT="$GAME_DIR/mod/bepinex"
 
-rm -rf "$DIST"
-mkdir -p "$DIST/bepinex/BepInEx" "$DIST/plugin/fonts" "$DIST/mod-build/scripts"
+rm -rf "$BEPINEX_OUT"
+mkdir -p "$BEPINEX_OUT/BepInEx"
 
 # --- BepInEx framework (Doorstop + BepInEx 6 IL2CPP runtime) ---
 echo "==> Staging BepInEx framework"
-cp -r "$GAME_DIR/BepInEx/core" "$DIST/bepinex/BepInEx/"
-mkdir -p "$DIST/bepinex/BepInEx/patchers"
-cp -r "$GAME_DIR/BepInEx/unity-libs" "$DIST/bepinex/BepInEx/"
-mkdir -p "$DIST/bepinex/BepInEx/config"
-cp "$GAME_DIR/BepInEx/config/BepInEx.cfg" "$DIST/bepinex/BepInEx/config/"
-cp -r "$GAME_DIR/dotnet" "$DIST/bepinex/"
-cp "$GAME_DIR/doorstop_config.ini" "$DIST/bepinex/"
-cp "$GAME_DIR/.doorstop_version" "$DIST/bepinex/"
-cp "$GAME_DIR/winhttp.dll" "$DIST/bepinex/"
-cp "$SCRIPT_DIR/LICENSE_BepInEx.txt" "$DIST/bepinex/"
+cp -r "$GAME_DIR/BepInEx/core" "$BEPINEX_OUT/BepInEx/"
+mkdir -p "$BEPINEX_OUT/BepInEx/patchers"
+cp -r "$GAME_DIR/BepInEx/unity-libs" "$BEPINEX_OUT/BepInEx/"
+mkdir -p "$BEPINEX_OUT/BepInEx/config"
+cp "$GAME_DIR/BepInEx/config/BepInEx.cfg" "$BEPINEX_OUT/BepInEx/config/"
+cp -r "$GAME_DIR/dotnet" "$BEPINEX_OUT/"
+cp "$GAME_DIR/doorstop_config.ini" "$BEPINEX_OUT/"
+cp "$GAME_DIR/.doorstop_version" "$BEPINEX_OUT/"
+cp "$GAME_DIR/winhttp.dll" "$BEPINEX_OUT/"
 
 # --- Plugin ---
 echo "==> Building NounTownZhTW plugin"
 export PATH="$HOME/.dotnet:$PATH"
 ( cd "$GAME_DIR/mod/plugin/NounTownZhTW" && dotnet build -c Release )
-cp "$GAME_DIR/mod/plugin/NounTownZhTW/bin/Release/net6.0/NounTownZhTW.dll" "$DIST/plugin/"
-cp "$GAME_DIR/mod/fonts/"* "$DIST/plugin/fonts/"
+cp "$GAME_DIR/mod/plugin/NounTownZhTW/bin/Release/net6.0/NounTownZhTW.dll" "$GAME_DIR/mod/plugin/NounTownZhTW/NounTownZhTW.dll"
 
-# --- zh-TW data build pipeline (re-run at install time against the target game) ---
-echo "==> Staging build scripts"
-cp "$GAME_DIR"/mod/scripts/{gamedir.py,extract_bundles.py,build_languagelist.py,convert_opencc.py,build_shadow_bundles.py,build_all.sh,requirements.txt} "$DIST/mod-build/scripts/"
-
-# --- Installer + docs ---
-cp "$SCRIPT_DIR/install.sh" "$DIST/"
-cp "$SCRIPT_DIR/README.md" "$DIST/"
-cp "$SCRIPT_DIR/LICENSE_NounTownTraditionalChinese.txt" "$DIST/"
-cp "$SCRIPT_DIR/LICENSE_BepInEx.txt" "$DIST/"
-chmod +x "$DIST/install.sh" "$DIST/mod-build/scripts/build_all.sh"
-
-echo "==> Package staged at $DIST"
+echo "==> Done. mod/bepinex/ and mod/plugin/NounTownZhTW/NounTownZhTW.dll refreshed."
