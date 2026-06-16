@@ -42,10 +42,10 @@ See `INSTALL.md` inside the zip for details and troubleshooting.
 Requires `python3`, `pip`, and `bash` (already present on most distros).
 
 Doorstop hooks the game via `winhttp.dll`. Under Proton this DLL override
-must be enabled - set this game's Steam launch options to:
+must be enabled - set this game's Steam launch options to (right click the game and then select properties):
 
 ```
-WINEDLLOVERRIDES="winhttp=n,b" %command%
+WINEDLLOVERRIDES="winhttp=n,b; winepulse.drv=d" %command%
 ```
 
 See `INSTALL.md` inside the zip for details.
